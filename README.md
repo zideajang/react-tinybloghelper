@@ -72,7 +72,7 @@ Please ensure you have Node.js (including npm or yarn) and Python (3.7+ recommen
 ## 📺 视频说明 (Video Explanations)
 
 项目的后端逻辑实现等详细说明会更新到**哔哩哔哩 (Bilibili)** 频道。
-
+![aBlog 应用截图](images/screenshot_002.jpg)
 
 请搜索用户：**zidea2015**
 
