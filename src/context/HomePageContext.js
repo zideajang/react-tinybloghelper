@@ -14,7 +14,7 @@ export const HomePageProvider = ({ children }) => {
     const [error, setError] = useState(null);
     const [notification, setNotification] = useState(null);
 
-
+    
     // user
     const [user,setUser] = useState(null);
     const [isEditMode,setIsEditMode] = useState(false);
@@ -28,6 +28,8 @@ export const HomePageProvider = ({ children }) => {
 
     // blog
     const [blogContent,setBlogContent] = useState(null);
+    const [feedbackSummary,setFeedbackSummary] = useState(null);
+    const [specificPoints,setSpecificPoints] = useState([]);
 
     // title
     const [title,setTitle] = useState('');
@@ -46,18 +48,23 @@ export const HomePageProvider = ({ children }) => {
     const [isExpandUserRequest,setIsExpandUserRequest] = useState(false);
     const [taskList,setTaskList] = useState([
 
-        {name:"pending_assignment",        content:" 待 Peter 分配给 Ava" },
-        {name:"writing_in_progress",       content:" Ava 正在撰写" },
-        {name:"pending_editorial_review",  content:" 等待 Emily 审核" },
-        {name:"editing_in_progress",       content:" Emily 正在审核" },
-        {name:"pending_writer_revision",   content:" 等待 Ava 根据反馈修改" },
+        {name:"pending_assignment",content:" 待 Peter 分配给 Ava" },
+        {name:"writing_in_progress",content:" Ava 正在撰写" },
+        {name:"pending_editorial_review",content:" 等待 Emily 审核" },
+        {name:"editing_in_progress",content:"Emily 正在审核" },
+        {name:"pending_writer_revision",content:"等待 Ava 根据反馈修改" },
         {name:"revision_in_progress",      content:" Ava 正在修改" },
-        {name:"pending_chief_final_review",  content:" 等待 Peter 最终审核" },
+        {name:"pending_chief_final_review",  content:"等待 Peter 最终审核" },
         {name:"approved_for_publication",  content:" Peter 批准发布" },
-        {name:"requires_further_human_intervention",  content:" 需要人工介入决策" },
-        {name:"rejected", content:" 被拒绝" },
+        {name:"requires_further_human_intervention",  content:"需要人工介入决策" },
+        {name:"rejected", content:"被拒绝" },
         {name:"published",content:" (如果系统还负责发布)" }
     ]);
+
+    const getContentByName = (name) =>{
+        const task = taskList.find(task => task.name === name);
+        return task ? task.content : undefined;
+        }
 
     const [blogFilePath,setBlogFilePath] = useState("/static/blogs/2738b3a4/2cabbea9.txt")
     const [tasks,setTasks] = useState([
@@ -81,62 +88,47 @@ export const HomePageProvider = ({ children }) => {
         websocket.current.onmessage = (event) => {
             try {
                 const result = JSON.parse(JSON.parse(event.data))
+                console.log(result)
                 if(result.messageType === "action"){
-                    if(result.state === "pending_assignment"){
-                        // setBlogContent(result.content)
-                        console.log(result.agent)
-                        setCurrentAgent(result.agent)
-                        setMessages((prevMessages)=>[...prevMessages,{
-                            "role":"assistant",
-                            "iconUrl":result.agent.iconUrl,
-                            "name":result.agent.name,
-                            "content":"Peter 开始写博客..."
-                        }])
+                    if (result.agent.name === "Ava"){
+                        setBlogContent(result.content)
+                    }
+                    if(result.agent.name === "Emily"){
+                        // const 
+                        const feedback = JSON.parse(result.content)
+                        console.log(feedback)
+                        setFeedbackSummary(feedback.feedback_summary)
+                        setSpecificPoints(feedback.specific_points)
+                    }
+
+
+                    setCurrentAgent(result.agent)
+                    setMessages((prevMessages)=>[...prevMessages,{
+                        "role":"assistant",
+                        "iconUrl":result.agent.iconUrl,
+                        "name":result.agent.name,
+                        "content":getContentByName(result.state)
+                    }])
+
+                    // human 进入环境
                         
+                    websocket.current.send(JSON.stringify({
+                        action:"create",
+                        taskId:result.taskId,
+                        state:result.next
+                    }));
 
+                    setTasks((preTasks)=>[...preTasks,
+                        {
+                            name:result.state,       
+                            agent:result.agent.name,
+                            content:getContentByName(result.state)
+                        },
+                    ])
 
-                        websocket.current.send(JSON.stringify({
-                            action:"start",
-                            state:"writing_in_progress"
-                        }));
-                    }
-                    if(result.state === "writing_in_progress"){
-                        setBlogContent(result.content)
-                        // setCurrentAgent(result.agent)
-                        setMessages((prevMessages)=>[...prevMessages,{
-                            "role":"assistant",
-                            "iconUrl":result.agent.iconUrl,
-                            "name":result.agent.name,
-                            "content":"Ava 完成博客创作"
-                        }])
-
-                        setTasks((preTasks)=>[...preTasks,
-                            {
-                                name:"writing_in_progress",       
-                                agent:'Ava',
-                                content:" Ava 正在撰写" },
-                        ])
-
-                        websocket.current.send(JSON.stringify({
-                            action:"start",
-                            state:"pending_editorial_review"
-                        }));
-                    }
-                    
-                    if(result.action === "pending_editorial_review"){
-                        setBlogContent(result.content)
-                        setCurrentAgent(agents[0])
-                        setMessages((prevMessages)=>[...prevMessages,{
-                            "role":"assistant",
-                            "name":"Ava",
-                            "content":"Ava 开始写博客..."
-                        }])
-                    }
-
-                }else{
-
-                    result.role = "assistant"
                 }
+
+                
                 // setMessages((prevMessages) => [...prevMessages, result]);
             } catch (error) {
             console.error("Error parsing modified JSON:", error);
@@ -170,7 +162,7 @@ export const HomePageProvider = ({ children }) => {
                         return agent
                     });
                     setAgents(response.data.data); // 根据你的后端返回结构调整
-                    setCurrentAgent(response.data.data[0])
+                    setCurrentAgent(response.data.data[2])
                     setLoading(false);
 
                 }
@@ -218,13 +210,13 @@ export const HomePageProvider = ({ children }) => {
     }, []); // 空依赖数组表示 effect 只在组件挂载和卸载时执行一次
 
     const startAction = async ()=>{
-
         
         if(websocket.current && websocket.current.readyState === WebSocket.OPEN){
             console.log("start action");
             toast.info("启动任务");
             websocket.current.send(JSON.stringify({
-                action:"start",
+                action:"create",
+                taskId:"",
                 state:"pending_assignment"
             }));
         }
@@ -285,6 +277,9 @@ export const HomePageProvider = ({ children }) => {
             instructions,setInstructions,
             toneStyle,setToneStyle,
             targetAudience,setTargetAudience,
+
+            feedbackSummary,setFeedbackSummary,
+            specificPoints,setSpecificPoints,
 
             sendMessage
 

@@ -1,8 +1,15 @@
+import { useContext } from "react";
+import HomePageContext from "../context/HomePageContext";
+
 
 
 const AgentComp = ({agent,clickOnAgent})=>{
+    const {
+        currentAgent
+    } = useContext(HomePageContext)
+
     return (
-  <div class={`box ${agent.name==="Ava"?"has-background-primary-10 has-text-primary-10-invert":""}`} onClick={clickOnAgent(agent)}>
+  <div class={`box ${currentAgent.name===agent.name?"has-background-primary-10 has-text-primary-10-invert":""}`} onClick={clickOnAgent(agent)}>
     <div className="is-flex pt-3 is-justify-content-center ">
         <figure class="image is-64x64 is-1by1 mb-3">
             <img

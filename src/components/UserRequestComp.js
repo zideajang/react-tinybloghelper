@@ -48,6 +48,9 @@ const UserRequestComp = ()=>{
 
         const targetAudienceList = data.target_audience.split(/\s*,\s*/).filter(audience => audience.trim() !== ''); // Split and remove empty audience entries
         setTargetAudience(targetAudienceList);
+
+        // instructions
+        setInstructions(data?.specific_instructions.split(/\s*,\s*/).filter(instruction => instruction.trim() !== ''))
         // ---------------------------------------------------------------------
 
         // --- Implement fetching data to the backend ---
@@ -97,19 +100,27 @@ const UserRequestComp = ()=>{
  */
     return (
         <>
-        <div className="box">
+        {topic && <div className="box">
             <div className="content">
                 <ul>
                     {topic &&<li><strong>博客标题</strong>: {topic}</li>}
-                    {tags &&<li> <strong>关键字</strong>{tags.map((tag,idx)=>(<span key={`tag-${idx}`} className="tag mr-2">{tag}</span>))}</li>}
-                    {targetAudience && <><strong>面向人群</strong><ul>
+                    {tags.length > 0 &&<li> <strong>关键字</strong>{tags.map((tag,idx)=>(<span key={`tag-${idx}`} className="tag mr-2">{tag}</span>))}</li>}
+                    {targetAudience.length >0 && <><strong>面向人群</strong><ul>
                         {targetAudience.map((audience,idx)=>(
                             <li key={`audience=${idx}`}>{audience}</li>
                         ))}
                         </ul></>}
+
+                    {toneStyle && <li><strong>风格</strong>: {toneStyle}</li>}
+                    {instructions && <li><strong>指令说明</strong>: {instructions.map((instruction,idx)=>(
+                        <li key={`instruction-${idx}`}>{instruction}</li>
+                    ))}</li>}
+                    {/* 如果 references 状态有值，也可以在这里显示 */}
+                    {/* {references && <li><strong>参考资料</strong>: {references}</li>} */}
+                    {/* 补全的代码到这里结束 */}
                 </ul>
             </div>
-        </div>
+        </div>}
         <div className="box">
             <form onSubmit={handleSubmit(handleUserRequestSubmit)}>
                 {/* topic */}
